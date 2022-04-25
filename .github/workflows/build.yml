@@ -4,7 +4,7 @@ on:
   # yamllint disable-line rule:truthy
   workflow_dispatch:
   push:
-    branches: ['release']
+    branches: ['master']
 
 env:
   REGISTRY: ghcr.io
