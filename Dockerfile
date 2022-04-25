@@ -75,46 +75,50 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ARG GITREF_MODGRAPHITE=master
-ARG GITREF_MODAWS=master
-ARG GITREF_REACTBUNDLE=v0.7.0
-ARG GITREF_INCUBATOR=v0.5.0
-ARG GITREF_IPL=v0.3.0
+ARG GITREF_AWSSDK=3.218.5
+ARG GITREF_INCUBATOR=v0.14.0
+ARG GITREF_IPL=v0.5.0
+ARG GITREF_MODAWS=v1.1.0
+ARG GITREF_MODDIRECTOR=v1.9.1
+ARG GITREF_MODGRAPHITE=v1.2.0
+ARG GITREF_MODX509=v1.1.1
+ARG GITREF_REACTBUNDLE=v0.9.0
 
 RUN mkdir -p /usr/local/share/icingaweb2/modules/ \
     # Icinga Director
     && mkdir -p /usr/local/share/icingaweb2/modules/director/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-director/archive/v1.8.1.tar.gz" \
+    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-director/archive/${GITREF_MODDIRECTOR}.tar.gz" \
     | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/director --exclude=.gitignore -f - \
-    # Icingaweb2 Graphite
+    # # Icingaweb2 Graphite
     && mkdir -p /usr/local/share/icingaweb2/modules/graphite \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-graphite/archive/v1.1.0.tar.gz" \
+    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-graphite/archive/${GITREF_MODGRAPHITE}.tar.gz" \
     | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/graphite -f - \
     # Icingaweb2 AWS
     && mkdir -p /usr/local/share/icingaweb2/modules/aws \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-aws/archive/v1.0.0.tar.gz" \
+    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-aws/archive/${GITREF_MODAWS}.tar.gz" \
     | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/aws -f - \
-    && wget -q --no-cookies "https://github.com/aws/aws-sdk-php/releases/download/2.8.30/aws.zip" \
+    && wget -q --no-cookies "https://github.com/aws/aws-sdk-php/releases/download/${GITREF_AWSSDK}/aws.zip" \
     && unzip -d /usr/local/share/icingaweb2/modules/aws/library/vendor/aws aws.zip \
     && rm aws.zip \
     # Module Reactbundle
     && mkdir -p /usr/local/share/icingaweb2/modules/reactbundle/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-reactbundle/archive/v0.7.0.tar.gz" \
+    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-reactbundle/archive/${GITREF_REACTBUNDLE}.tar.gz" \
     | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/reactbundle -f - \
     # Module Incubator
     && mkdir -p /usr/local/share/icingaweb2/modules/incubator/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-incubator/archive/v0.6.0.tar.gz" \
+    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-incubator/archive/${GITREF_INCUBATOR}.tar.gz" \
     | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/incubator -f - \
     # Module Ipl
     && mkdir -p /usr/local/share/icingaweb2/modules/ipl/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-ipl/archive/v0.3.0.tar.gz" \
+    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-ipl/archive/${GITREF_IPL}.tar.gz" \
     | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/ipl -f - \
     # Module x509
     && mkdir -p /usr/local/share/icingaweb2/modules/x509/ \
-    && wget -q --no-cookies "https://github.com/Icinga/icingaweb2-module-x509/archive/v1.0.0.zip" \
-    && unzip -d /usr/local/share/icingaweb2/modules/x509 v1.0.0.zip \
-    && mv /usr/local/share/icingaweb2/modules/x509/icingaweb2-module-x509-1.0.0/* /usr/local/share/icingaweb2/modules/x509/ \
-    && rm -rf /usr/local/share/icingaweb2/modules/x509/icingaweb2-module-x509-1.0.0/ \
+    && wget -q --no-cookies "https://github.com/Icinga/icingaweb2-module-x509/archive/${GITREF_MODX509}.zip" \
+    && unzip -d /usr/local/share/icingaweb2/modules/x509 ${GITREF_MODX509}.zip \
+    && mv /usr/local/share/icingaweb2/modules/x509/icingaweb2-module-x509-${GITREF_MODX509#v}/* /usr/local/share/icingaweb2/modules/x509/ \
+    && rm -rf /usr/local/share/icingaweb2/modules/x509/icingaweb2-module-x509-${GITREF_MODX509#v}/ \
+    && rm ${GITREF_MODX509}.zip \
     && true
 
 ADD content/ /
