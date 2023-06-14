@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: T-Systems-MMS/icinga2
+  IMAGE_NAME: telekom-mms/icinga2
 
 jobs:
   build-and-push-image:
