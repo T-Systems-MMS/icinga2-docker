@@ -24,6 +24,7 @@ mkdir -p /var/log/icinga2/compat/archives
 chown -R nagios:adm /var/log/icinga2
 
 mkdir -p /var/lib/icinga2/api/zones
+mkdir -p /var/lib/icinga2/api/certs
 mkdir -p /var/lib/icinga2/api/log
 mkdir -p /var/lib/icinga2/api/repository
 chown -R nagios:nagios /var/lib/icinga2
@@ -31,6 +32,10 @@ chown -R nagios:nagios /var/spool/icinga2
 chown -R nagios:nagios /var/cache/icinga2
 
 chown -R nagios:root /etc/icinga2
+
+mkdir -p /var/log/icinga2/ /var/lib/icinga2/certs /etc/icinga2/
+chmod +x /var/log/icinga2/ /var/lib/icinga2/certs /etc/ /etc/icinga2/ /usr/share/icinga2/ /usr/share/icinga2/include /usr/share/icinga /usr/local /usr/ /usr/share /usr/local/share/icingaweb2/ /usr/local/share/icingaweb2/modules/ /usr/local/share/icingaweb2/modules/*
+chown -R nagios:nagios /var/log/icinga2/ /etc/icinga* /usr/share/icinga* /usr/local/share/icinga* /var/lib/icinga2/ 
 
 # enable necessary features
 icinga2 feature enable ido-mysql livestatus compatlog command

@@ -1,7 +1,7 @@
 # Dockerfile for icinga2 with icingaweb2
 # https://github.com/jjethwa/icinga2
 
-FROM debian:buster
+FROM debian:bookworm
 
 ENV APACHE2_HTTP=REDIRECT \
     ICINGA2_FEATURE_GRAPHITE=false \
@@ -14,6 +14,7 @@ ENV APACHE2_HTTP=REDIRECT \
     ICINGA2_FEATURE_DIRECTOR="true" \
     ICINGA2_FEATURE_DIRECTOR_KICKSTART="true" \
     ICINGA2_FEATURE_DIRECTOR_USER="icinga2-director" \
+    ICINGA2_LOG_LEVEL="information" \
     MYSQL_ROOT_USER=root
 
 RUN export DEBIAN_FRONTEND=noninteractive \
@@ -21,15 +22,19 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     apache2 \
+    apt-transport-https \
+    bc \
     ca-certificates \
     curl \
     dnsutils \
     file \
     gnupg \
+    jq \
     libdbd-mysql-perl \
     libdigest-hmac-perl \
     libnet-snmp-perl \
     locales \
+    logrotate \
     lsb-release \
     bsd-mailx \
     mariadb-client \
@@ -44,12 +49,16 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     php-gmp \
     procps \
     pwgen \
+    python3 \
+    python3-requests \
     snmp \
     msmtp \
     sudo \
     supervisor \
+    telnet \
     unzip \
     wget \
+    cron \
     && apt-get -y --purge remove exim4 exim4-base exim4-config exim4-daemon-light \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -57,7 +66,8 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 RUN export DEBIAN_FRONTEND=noninteractive \
     && curl -s https://packages.icinga.com/icinga.key \
     | apt-key add - \
-    && echo "deb http://packages.icinga.org/debian icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/icinga2.list \
+    && echo "deb https://packages.icinga.com/debian icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/$(lsb_release -cs)-icinga.list \
+    && echo "deb-src https://packages.icinga.com/debian icinga-$(lsb_release -cs) main" >> /etc/apt/sources.list.d/$(lsb_release -cs)-icinga.list \
     && echo "deb http://deb.debian.org/debian $(lsb_release -cs)-backports main" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list \
     && apt-get update \
     && apt-get install -y --install-recommends \
@@ -65,8 +75,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     icinga2-ido-mysql \
     icingacli \
     icingaweb2 \
-    icingaweb2-module-doc \
-    icingaweb2-module-monitoring \
     monitoring-plugins \
     nagios-nrpe-plugin \
     nagios-plugins-contrib \
@@ -131,17 +139,24 @@ RUN true \
     && mkdir -p /etc/icinga2 \
     && usermod -aG icingaweb2 www-data \
     && usermod -aG nagios www-data \
+    && usermod -aG icingaweb2 nagios \
     && mkdir -p /var/log/icinga2 \
     && chmod 755 /var/log/icinga2 \
-    && chown nagios:adm /var/log/icinga2 \
+    && chown nagios:nagios /var/log/icinga2 \
+    && mkdir -p /var/cache/icinga2 \
+    && chmod 755 /var/cache/icinga2 \
+    && chown nagios:nagios /var/cache/icinga2 \
+    && touch /var/log/cron.log \
     && rm -rf \
     /var/lib/mysql/* \
     && chmod u+s,g+s \
     /bin/ping \
     /bin/ping6 \
-    /usr/lib/nagios/plugins/check_icmp
+    /usr/lib/nagios/plugins/check_icmp \
+    && /sbin/setcap cap_net_raw+p /bin/ping
 
 EXPOSE 80 443 5665
 
 # Initialize and run Supervisor
 ENTRYPOINT ["/opt/run"]
+

@@ -8,9 +8,9 @@
 || [ "${ICINGAWEB2_DIRECTOR_MYSQL_HOST}" == "localhost" ]
 } || { echo "Skpipping local MySQL server bootup."; sleep infinity; }
 
-service mysql start
+service mariadb start
 
 # Allow any signal which would kill a process to stop server
-trap "service mysql stop" HUP INT QUIT ABRT ALRM TERM TSTP
+trap "service mariadb stop" HUP INT QUIT ABRT ALRM TERM TSTP
 
-while pgrep -u mysql mysql > /dev/null; do sleep 5; done
+while pgrep -u mysql mariadbd > /dev/null; do sleep 5; done
