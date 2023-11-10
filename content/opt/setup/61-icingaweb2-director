@@ -16,6 +16,7 @@ mysql_wait \
 
 if evaluate_boolean "${ICINGA2_FEATURE_DIRECTOR}"; then
 
+  ln -fs /usr/share/icingaweb2/modules/director /etc/icingaweb2/enabledModules/
 	icingacli module enable director
 
 	# Create MySQL user on localhost or test given connection
@@ -44,7 +45,7 @@ if evaluate_boolean "${ICINGA2_FEATURE_DIRECTOR}"; then
 	mysql_test_credentials
 
 	mysql_user \
-		< /usr/local/share/icingaweb2/modules/director/schema/mysql.sql \
+		< /usr/share/icingaweb2/modules/director/schema/mysql.sql \
 		>> /var/log/icingaweb2/director-schema.log \
 		2>&1 || true
 
