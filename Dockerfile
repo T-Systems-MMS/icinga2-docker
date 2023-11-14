@@ -23,7 +23,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y --no-install-recommends \
     apache2 \
     apt-transport-https \
-    bc \
     ca-certificates \
     curl \
     dnsutils \
@@ -94,7 +93,7 @@ RUN rm -fr /usr/share/icinga-php/ipl/ && mkdir -p /usr/share/icinga-php/ipl/ \
    | tar xfz - -C /usr/share/icinga-php/ipl/ --strip-components 1
 
 
-ADD content/ /
+COPY content/ /
 
 # Final fixes
 RUN true \
@@ -102,8 +101,7 @@ RUN true \
     && mv /etc/icingaweb2/ /etc/icingaweb2.dist \
     && mv /etc/icinga2/ /etc/icinga2.dist \
     && mkdir -p /etc/icinga2 \
-    && usermod -aG icingaweb2 www-data \
-    && usermod -aG nagios www-data \
+    && usermod -aG icingaweb2,nagios www-data \
     && usermod -aG icingaweb2 nagios \
     && mkdir -p /var/log/icinga2 \
     && chmod 755 /var/log/icinga2 \
