@@ -9,12 +9,12 @@
 } || exit 0
 
 chown -R mysql:mysql /var/lib/mysql
-chown -R mysql:mysql /var/log/mysql
+chmod +x /var/ /var/lib/ /var/lib/mysql/
 
 if [ ! "$(ls -A /var/lib/mysql)" ]; then
 	echo "=>MySQL datadir is empty...initializing"
 	/usr/bin/mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
 fi
 
-/etc/init.d/mysql start
+service mariadb start
 mysql_wait localhost 3306

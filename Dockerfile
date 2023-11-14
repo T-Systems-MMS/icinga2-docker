@@ -1,7 +1,7 @@
 # Dockerfile for icinga2 with icingaweb2
 # https://github.com/jjethwa/icinga2
 
-FROM debian:buster
+FROM debian:bookworm
 
 ENV APACHE2_HTTP=REDIRECT \
     ICINGA2_FEATURE_GRAPHITE=false \
@@ -14,6 +14,7 @@ ENV APACHE2_HTTP=REDIRECT \
     ICINGA2_FEATURE_DIRECTOR="true" \
     ICINGA2_FEATURE_DIRECTOR_KICKSTART="true" \
     ICINGA2_FEATURE_DIRECTOR_USER="icinga2-director" \
+    ICINGA2_LOG_LEVEL="information" \
     MYSQL_ROOT_USER=root
 
 RUN export DEBIAN_FRONTEND=noninteractive \
@@ -21,15 +22,18 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
     apache2 \
+    apt-transport-https \
     ca-certificates \
     curl \
     dnsutils \
     file \
     gnupg \
+    jq \
     libdbd-mysql-perl \
     libdigest-hmac-perl \
     libnet-snmp-perl \
     locales \
+    logrotate \
     lsb-release \
     bsd-mailx \
     mariadb-client \
@@ -44,20 +48,27 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     php-gmp \
     procps \
     pwgen \
+    python3 \
+    python3-requests \
     snmp \
     msmtp \
     sudo \
     supervisor \
+    telnet \
     unzip \
     wget \
+    cron \
     && apt-get -y --purge remove exim4 exim4-base exim4-config exim4-daemon-light \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+ARG GITREF_MODDIRECTOR=1.11.0-1+debian12
+
 RUN export DEBIAN_FRONTEND=noninteractive \
     && curl -s https://packages.icinga.com/icinga.key \
     | apt-key add - \
-    && echo "deb http://packages.icinga.org/debian icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/icinga2.list \
+    && echo "deb https://packages.icinga.com/debian icinga-$(lsb_release -cs) main" > /etc/apt/sources.list.d/$(lsb_release -cs)-icinga.list \
+    && echo "deb-src https://packages.icinga.com/debian icinga-$(lsb_release -cs) main" >> /etc/apt/sources.list.d/$(lsb_release -cs)-icinga.list \
     && echo "deb http://deb.debian.org/debian $(lsb_release -cs)-backports main" > /etc/apt/sources.list.d/$(lsb_release -cs)-backports.list \
     && apt-get update \
     && apt-get install -y --install-recommends \
@@ -65,8 +76,8 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     icinga2-ido-mysql \
     icingacli \
     icingaweb2 \
-    icingaweb2-module-doc \
-    icingaweb2-module-monitoring \
+    icinga-director=${GITREF_MODDIRECTOR} \
+    icinga-director-web=${GITREF_MODDIRECTOR} \
     monitoring-plugins \
     nagios-nrpe-plugin \
     nagios-plugins-contrib \
@@ -75,53 +86,14 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ARG GITREF_AWSSDK=3.218.5
-ARG GITREF_INCUBATOR=v0.20.0
-ARG GITREF_IPL=v0.5.0
-ARG GITREF_MODAWS=v1.1.0
-ARG GITREF_MODDIRECTOR=v1.11.0
-ARG GITREF_MODGRAPHITE=v1.2.0
-ARG GITREF_MODX509=v1.1.1
-ARG GITREF_REACTBUNDLE=v0.9.0
+# waiting for new release of the lib: https://github.com/Icinga/icinga-php-library/issues/28
+ARG INSTALL_VERSION="snapshot/nightly"
+RUN rm -fr /usr/share/icinga-php/ipl/ && mkdir -p /usr/share/icinga-php/ipl/ \
+    && wget -q "https://github.com/Icinga/icinga-php-library/archive/$INSTALL_VERSION.tar.gz" -O - \
+   | tar xfz - -C /usr/share/icinga-php/ipl/ --strip-components 1
 
-RUN mkdir -p /usr/local/share/icingaweb2/modules/ \
-    # Icinga Director
-    && mkdir -p /usr/local/share/icingaweb2/modules/director/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-director/archive/${GITREF_MODDIRECTOR}.tar.gz" \
-    | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/director --exclude=.gitignore -f - \
-    # # Icingaweb2 Graphite
-    && mkdir -p /usr/local/share/icingaweb2/modules/graphite \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-graphite/archive/${GITREF_MODGRAPHITE}.tar.gz" \
-    | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/graphite -f - \
-    # Icingaweb2 AWS
-    && mkdir -p /usr/local/share/icingaweb2/modules/aws \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-aws/archive/${GITREF_MODAWS}.tar.gz" \
-    | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/aws -f - \
-    && wget -q --no-cookies "https://github.com/aws/aws-sdk-php/releases/download/${GITREF_AWSSDK}/aws.zip" \
-    && unzip -d /usr/local/share/icingaweb2/modules/aws/library/vendor/aws aws.zip \
-    && rm aws.zip \
-    # Module Reactbundle
-    && mkdir -p /usr/local/share/icingaweb2/modules/reactbundle/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-reactbundle/archive/${GITREF_REACTBUNDLE}.tar.gz" \
-    | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/reactbundle -f - \
-    # Module Incubator
-    && mkdir -p /usr/local/share/icingaweb2/modules/incubator/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-incubator/archive/${GITREF_INCUBATOR}.tar.gz" \
-    | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/incubator -f - \
-    # Module Ipl
-    && mkdir -p /usr/local/share/icingaweb2/modules/ipl/ \
-    && wget -q --no-cookies -O - "https://github.com/Icinga/icingaweb2-module-ipl/archive/${GITREF_IPL}.tar.gz" \
-    | tar xz --strip-components=1 --directory=/usr/local/share/icingaweb2/modules/ipl -f - \
-    # Module x509
-    && mkdir -p /usr/local/share/icingaweb2/modules/x509/ \
-    && wget -q --no-cookies "https://github.com/Icinga/icingaweb2-module-x509/archive/${GITREF_MODX509}.zip" \
-    && unzip -d /usr/local/share/icingaweb2/modules/x509 ${GITREF_MODX509}.zip \
-    && mv /usr/local/share/icingaweb2/modules/x509/icingaweb2-module-x509-${GITREF_MODX509#v}/* /usr/local/share/icingaweb2/modules/x509/ \
-    && rm -rf /usr/local/share/icingaweb2/modules/x509/icingaweb2-module-x509-${GITREF_MODX509#v}/ \
-    && rm ${GITREF_MODX509}.zip \
-    && true
 
-ADD content/ /
+COPY content/ /
 
 # Final fixes
 RUN true \
@@ -129,19 +101,25 @@ RUN true \
     && mv /etc/icingaweb2/ /etc/icingaweb2.dist \
     && mv /etc/icinga2/ /etc/icinga2.dist \
     && mkdir -p /etc/icinga2 \
-    && usermod -aG icingaweb2 www-data \
-    && usermod -aG nagios www-data \
+    && usermod -aG icingaweb2,nagios www-data \
+    && usermod -aG icingaweb2 nagios \
     && mkdir -p /var/log/icinga2 \
     && chmod 755 /var/log/icinga2 \
-    && chown nagios:adm /var/log/icinga2 \
+    && chown nagios:nagios /var/log/icinga2 \
+    && mkdir -p /var/cache/icinga2 \
+    && chmod 755 /var/cache/icinga2 \
+    && chown nagios:nagios /var/cache/icinga2 \
+    && touch /var/log/cron.log \
     && rm -rf \
     /var/lib/mysql/* \
     && chmod u+s,g+s \
     /bin/ping \
     /bin/ping6 \
-    /usr/lib/nagios/plugins/check_icmp
+    /usr/lib/nagios/plugins/check_icmp \
+    && /sbin/setcap cap_net_raw+p /bin/ping
 
 EXPOSE 80 443 5665
 
 # Initialize and run Supervisor
 ENTRYPOINT ["/opt/run"]
+
