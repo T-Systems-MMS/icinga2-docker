@@ -62,7 +62,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ARG GITREF_MODDIRECTOR=1.11.0-1+debian12
+ARG GITREF_MODDIRECTOR=1.11.1-2+debian12
 
 RUN export DEBIAN_FRONTEND=noninteractive \
     && curl -s https://packages.icinga.com/icinga.key \
